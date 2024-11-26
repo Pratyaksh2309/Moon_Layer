@@ -1,77 +1,101 @@
-import React, { useState, useEffect } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls, Sphere, Stars } from '@react-three/drei';
-import { useLoader } from '@react-three/fiber';
-import { TextureLoader, RepeatWrapping } from 'three';
-import "./moonlayer.css";
+import React, { useState, useEffect, useRef } from 'react';
+import { Canvas, useThree, useFrame } from '@react-three/fiber';
+import { OrbitControls, Stars, useGLTF } from '@react-three/drei';
+import Sidebar from './sidebar';
+import './moonlayer.css';
 
-const MoonLayer = () => {
-  const [coordinates, setCoordinates] = useState({ longitude: 0, latitude: 0 });
-  const [isLoading, setIsLoading] = useState(true);
+const MoonModel = ({ scale, autoRotate }) => {
+  const { scene } = useGLTF('Moon_1_3474.glb');
+  const moonRef = useRef();
 
-  // Load the textures (Moon texture + Displacement map)
-  const moonTexture = useLoader(TextureLoader, 'p.jpg', () => {
-    setIsLoading(false); // Set loading to false when texture is loaded
+  // Rotate the moon if auto-rotate is enabled
+  useFrame(() => {
+    if (autoRotate && moonRef.current) {
+      moonRef.current.rotation.y += 0.01; // Adjust rotation speed
+    }
   });
-  const displacementMap = useLoader(TextureLoader, 'd.jpg'); // Displacement map
 
-  // Adjust how the displacement map affects the geometry
-  displacementMap.wrapS = displacementMap.wrapT = RepeatWrapping;
+  return <primitive ref={moonRef} object={scene} scale={scale} />;
+};
 
+const CameraPosition = ({ setCoordinates }) => {
+  const { camera } = useThree();  // Access the camera from useThree hook
+
+  // Calculate latitude and longitude based on camera position
   const calculateLatLong = (cameraPosition) => {
-    const radius = Math.sqrt(
-      cameraPosition.x ** 2 + cameraPosition.y ** 2 + cameraPosition.z ** 2
-    );
+    const radius = Math.sqrt(cameraPosition.x ** 2 + cameraPosition.y ** 2 + cameraPosition.z ** 2);
     const latitude = (Math.asin(cameraPosition.y / radius) * 180) / Math.PI;
-    const longitude =
-      (Math.atan2(cameraPosition.z, cameraPosition.x) * 180) / Math.PI;
+    const longitude = (Math.atan2(cameraPosition.z, cameraPosition.x) * 180) / Math.PI;
+
     return {
       latitude: latitude.toFixed(2),
       longitude: longitude.toFixed(2),
     };
   };
 
-  const HandleControls = () => {
-    const { camera } = useThree();
-    return (
-      <OrbitControls
-        enableZoom={true}
-        onChange={() => {
-          const { x, y, z } = camera.position;
-          setCoordinates(calculateLatLong({ x, y, z }));
-        }}
-      />
-    );
-  };
+  // Update coordinates whenever the camera moves
+  useEffect(() => {
+    const { x, y, z } = camera.position;
 
- 
+    // Calculate latitude and longitude based on camera position
+    const newCoordinates = calculateLatLong({ x, y, z });
+
+    // Update coordinates
+    setCoordinates(newCoordinates);
+  }, [camera.position, setCoordinates]);  // Recalculate whenever camera position changes
+
+  return null;
+};
+
+const MoonLayer = () => {
+  const [showStars, setShowStars] = useState(true);  // Handle stars visibility
+  const [autoRotate, setAutoRotate] = useState(false); // State for auto rotation
+  const [coordinates, setCoordinates] = useState({ latitude: 0, longitude: 0 });
 
   return (
     <div style={{ position: 'relative', height: '100vh', width: '100%' }}>
-      <Canvas>
-        <Stars
-          radius={300}
-          depth={60}
-          count={5000}
-          factor={7}
-          saturation={0}
-          fade={true}
-        />
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[10, 10, 5]} intensity={1} />
-        <Sphere args={[2, 64, 64]} position={[0, 0, 0]}>
-          {/* Apply displacement map with additional properties */}
-          <meshStandardMaterial
-            map={moonTexture} // Diffuse map (color)
-            displacementMap={displacementMap} // Displacement map
-            displacementScale={0.1} // Adjust displacement intensity
-            roughness={1}
-            metalness={0.1}
+      <Sidebar
+        setShowStars={setShowStars}
+        autoRotate={autoRotate}
+        setAutoRotate={setAutoRotate}  // Control auto-rotation
+      />
+      <Canvas
+        camera={{
+          position: [500, 500, 500], // Initial camera position (x, y, z)
+          fov: 50,  // Field of view
+          near: 1, // Set near clipping plane to 1 (default is often too close)
+          far: 10000, // Set far clipping plane to a large value (increased to 10000)
+        }}
+      >
+        {showStars && (
+          <Stars
+            radius={300} // Place stars outside the Moon
+            depth={250}  // Depth of stars field
+            count={8000} // Number of stars
+            factor={10}  // Spread factor
+            saturation={0}  // Set color to white
+            fade={true}  // Smooth fade effect
           />
-        </Sphere>
-        <HandleControls />
+        )}
+        <ambientLight intensity={2.8} />
+        <directionalLight position={[10, 10, 5]} intensity={1} />
+        
+        {/* The MoonModel will move with OrbitControls, but stars will stay fixed */}
+        <MoonModel scale={[0.5, 0.5, 0.5]} autoRotate={autoRotate} />
+        
+        {/* OrbitControls will move the camera, not the stars */}
+        <OrbitControls
+          enableZoom={true}
+          zoomSpeed={2.0}
+          rotateSpeed={1.2}
+          enablePan={true}
+        />
+
+        {/* CameraPosition will calculate and update the coordinates */}
+        <CameraPosition setCoordinates={setCoordinates} />
       </Canvas>
 
+      {/* Display latitude and longitude at the bottom-right */}
       <div
         style={{
           position: 'absolute',
@@ -91,117 +115,3 @@ const MoonLayer = () => {
 };
 
 export default MoonLayer;
-
-// import React, { useState, useEffect } from 'react';
-// import { Canvas, useThree } from '@react-three/fiber';
-// import { OrbitControls, Sphere, Stars } from '@react-three/drei';
-// import { RepeatWrapping } from 'three';
-// import { TIFFLoader } from 'three/examples/jsm/loaders/TIFFLoader'; // Import TIFFLoader
-// import "./moonlayer.css";
-
-// const MoonLayer = () => {
-//   const [coordinates, setCoordinates] = useState({ longitude: 0, latitude: 0 });
-//   const [moonTexture, setMoonTexture] = useState(null);
-//   const [displacementMap, setDisplacementMap] = useState(null);
-//   const [isLoading, setIsLoading] = useState(true);
-
-//   // Load the TIFF textures manually
-//   useEffect(() => {
-//     const loader = new TIFFLoader();
-
-//     // Asynchronously load the texture and displacement map
-//     const loadTextures = async () => {
-//       try {
-//         const moonTex = await loader.loadAsync('p.jpg'); // Update with your file path
-//         const displacementTex = await loader.loadAsync('d.jpg'); // Update with your file path
-
-//         // Apply RepeatWrapping to displacement map
-//         displacementTex.wrapS = RepeatWrapping;
-//         displacementTex.wrapT = RepeatWrapping;
-
-//         setMoonTexture(moonTex);
-//         setDisplacementMap(displacementTex);
-//         setIsLoading(false); // Set loading to false when done
-//       } catch (error) {
-//         console.error("Error loading textures:", error);
-//         setIsLoading(false); // Prevent infinite loading state
-//       }
-//     };
-
-//     loadTextures();
-//   }, []);
-
-//   // Calculate latitude and longitude
-//   const calculateLatLong = (cameraPosition) => {
-//     const radius = Math.sqrt(
-//       cameraPosition.x ** 2 + cameraPosition.y ** 2 + cameraPosition.z ** 2
-//     );
-//     const latitude = (Math.asin(cameraPosition.y / radius) * 180) / Math.PI;
-//     const longitude =
-//       (Math.atan2(cameraPosition.z, cameraPosition.x) * 180) / Math.PI;
-//     return {
-//       latitude: latitude.toFixed(2),
-//       longitude: longitude.toFixed(2),
-//     };
-//   };
-
-//   const HandleControls = React.memo(() => {
-//     const { camera } = useThree();
-//     return (
-//       <OrbitControls
-//         enableZoom={true}
-//         maxPolarAngle={Math.PI} // Allow full 360-degree view
-//         minPolarAngle={0}
-//         onChange={() => {
-//           const { x, y, z } = camera.position;
-//           setCoordinates(calculateLatLong({ x, y, z }));
-//         }}
-//       />
-//     );
-//   });
-
-//   return (
-//     <div style={{ position: 'relative', height: '100vh', width: '100%' }}>
-//       <Canvas>
-//         <Stars
-//           radius={300}
-//           depth={60}
-//           count={5000}
-//           factor={7}
-//           saturation={0}
-//           fade={true}
-//         />
-//         <ambientLight intensity={0.5} />
-//         <directionalLight position={[10, 10, 5]} intensity={1} />
-//         <Sphere args={[2, 64, 64]} position={[0, 0, 0]}>
-//           {/* Apply displacement map with additional properties */}
-//           <meshStandardMaterial
-//             map={moonTexture} // Diffuse map (color)
-//             displacementMap={displacementMap} // Displacement map
-//             displacementScale={0.1} // Adjust displacement intensity
-//             roughness={1}
-//             metalness={0.1}
-//           />
-//         </Sphere>
-//         <HandleControls />
-//       </Canvas>
-
-//       <div
-//         style={{
-//           position: 'absolute',
-//           bottom: '10px',
-//           right: '10px',
-//           backgroundColor: 'rgba(0, 0, 0, 0.5)',
-//           color: 'white',
-//           padding: '10px',
-//           borderRadius: '8px',
-//         }}
-//       >
-//         <p>Latitude: {coordinates.latitude}°</p>
-//         <p>Longitude: {coordinates.longitude}°</p>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default MoonLayer;
