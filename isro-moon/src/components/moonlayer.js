@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars, useGLTF } from '@react-three/drei';
 import Sidebar from './sidebar';
@@ -19,7 +19,7 @@ const MoonModel = ({ scale, autoRotate }) => {
 };
 
 const CameraPosition = ({ setCoordinates }) => {
-  const { camera } = useThree();  // Access the camera from useThree hook
+  const { camera } = useThree(); // Access the camera from useThree hook
 
   // Calculate latitude and longitude based on camera position
   const calculateLatLong = (cameraPosition) => {
@@ -33,22 +33,22 @@ const CameraPosition = ({ setCoordinates }) => {
     };
   };
 
-  // Update coordinates whenever the camera moves
-  useEffect(() => {
+  // Using useFrame to update camera position on every frame
+  useFrame(() => {
     const { x, y, z } = camera.position;
 
     // Calculate latitude and longitude based on camera position
     const newCoordinates = calculateLatLong({ x, y, z });
 
-    // Update coordinates
+    // Update coordinates on every frame
     setCoordinates(newCoordinates);
-  }, [camera.position, setCoordinates]);  // Recalculate whenever camera position changes
+  });
 
   return null;
 };
 
 const MoonLayer = () => {
-  const [showStars, setShowStars] = useState(true);  // Handle stars visibility
+  const [showStars, setShowStars] = useState(true); // Handle stars visibility
   const [autoRotate, setAutoRotate] = useState(false); // State for auto rotation
   const [coordinates, setCoordinates] = useState({ latitude: 0, longitude: 0 });
 
@@ -57,12 +57,12 @@ const MoonLayer = () => {
       <Sidebar
         setShowStars={setShowStars}
         autoRotate={autoRotate}
-        setAutoRotate={setAutoRotate}  // Control auto-rotation
+        setAutoRotate={setAutoRotate} // Control auto-rotation
       />
       <Canvas
         camera={{
           position: [500, 500, 500], // Initial camera position (x, y, z)
-          fov: 50,  // Field of view
+          fov: 50, // Field of view
           near: 1, // Set near clipping plane to 1 (default is often too close)
           far: 10000, // Set far clipping plane to a large value (increased to 10000)
         }}
@@ -70,19 +70,19 @@ const MoonLayer = () => {
         {showStars && (
           <Stars
             radius={300} // Place stars outside the Moon
-            depth={250}  // Depth of stars field
+            depth={250} // Depth of stars field
             count={8000} // Number of stars
-            factor={10}  // Spread factor
-            saturation={0}  // Set color to white
-            fade={true}  // Smooth fade effect
+            factor={10} // Spread factor
+            saturation={0} // Set color to white
+            fade={true} // Smooth fade effect
           />
         )}
         <ambientLight intensity={2.8} />
         <directionalLight position={[10, 10, 5]} intensity={1} />
-        
+
         {/* The MoonModel will move with OrbitControls, but stars will stay fixed */}
         <MoonModel scale={[0.5, 0.5, 0.5]} autoRotate={autoRotate} />
-        
+
         {/* OrbitControls will move the camera, not the stars */}
         <OrbitControls
           enableZoom={true}
