@@ -3,54 +3,70 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars, useGLTF } from '@react-three/drei';
 import Sidebar from './sidebar';
 import './moonlayer.css';
+import * as THREE from 'three';
 
-const MoonModel = ({ scale, autoRotate }) => {
+// The MoonModel with auto-rotate support
+const MoonModel = React.forwardRef(({ scale, autoRotate }, ref) => {
   const { scene } = useGLTF('Moon_1_3474.glb');
-  const moonRef = useRef();
 
-  // Rotate the moon if auto-rotate is enabled
   useFrame(() => {
-    if (autoRotate && moonRef.current) {
-      moonRef.current.rotation.y += 0.01; // Adjust rotation speed
+    if (autoRotate && ref.current) {
+      ref.current.rotation.y += 0.01; // Adjust rotation speed here
     }
   });
 
-  return <primitive ref={moonRef} object={scene} scale={scale} />;
-};
+  return <primitive ref={ref} object={scene} scale={scale} />;
+});
 
-const CameraPosition = ({ setCoordinates }) => {
-  const { camera } = useThree(); // Access the camera from useThree hook
+// RaycasterHandler to calculate latitude and longitude
+const RaycasterHandler = ({ setCoordinates, autoRotate }) => {
+  const { camera, mouse } = useThree();
+  const moonRef = useRef();
+  const raycaster = useRef(new THREE.Raycaster());
 
-  // Calculate latitude and longitude based on camera position
-  const calculateLatLong = (cameraPosition) => {
-    const radius = Math.sqrt(cameraPosition.x ** 2 + cameraPosition.y ** 2 + cameraPosition.z ** 2);
-    const latitude = (Math.asin(cameraPosition.y / radius) * 180) / Math.PI;
-    const longitude = (Math.atan2(cameraPosition.z, cameraPosition.x) * 180) / Math.PI;
-
-    return {
-      latitude: latitude.toFixed(2),
-      longitude: longitude.toFixed(2),
-    };
-  };
-
-  // Using useFrame to update camera position on every frame
   useFrame(() => {
-    const { x, y, z } = camera.position;
+    if (moonRef.current) {
+      // Perform raycasting
+      raycaster.current.setFromCamera(mouse, camera);
+      const intersects = raycaster.current.intersectObject(moonRef.current, true);
 
-    // Calculate latitude and longitude based on camera position
-    const newCoordinates = calculateLatLong({ x, y, z });
+      if (intersects.length > 0) {
+        const point = intersects[0].point;
 
-    // Update coordinates on every frame
-    setCoordinates(newCoordinates);
+        // Convert the intersection point to spherical coordinates
+        const sphereCoords = new THREE.Spherical();
+        sphereCoords.setFromVector3(point);
+
+        // Convert spherical coordinates to latitude and longitude
+        const latitude = (90 - (sphereCoords.phi * 180) / Math.PI).toFixed(2);
+        const longitude = ((sphereCoords.theta * 180) / Math.PI - 180).toFixed(2);
+
+        setCoordinates({ latitude, longitude });
+      } else {
+        // Reset latitude and longitude to zero if no intersection
+        setCoordinates({ latitude: 0, longitude: 0 });
+      }
+    }
   });
 
-  return null;
+  return <MoonModel ref={moonRef} scale={[0.5, 0.5, 0.5]} autoRotate={autoRotate} />;
 };
 
+// Main MoonLayer Component
 const MoonLayer = () => {
   const [showStars, setShowStars] = useState(true); // Handle stars visibility
   const [autoRotate, setAutoRotate] = useState(false); // State for auto rotation
   const [coordinates, setCoordinates] = useState({ latitude: 0, longitude: 0 });
+  const mousePosition = useRef({ x: 0, y: 0 });
+
+  const handlePointerMove = (event) => {
+    const rect = event.target.getBoundingClientRect();
+    mousePosition.current = {
+      x: ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      y: -((event.clientY - rect.top) / rect.height) * 2 + 1,
+    };
+  };
+  
 
   return (
     <div style={{ position: 'relative', height: '100vh', width: '100%' }}>
@@ -61,41 +77,38 @@ const MoonLayer = () => {
       />
       <Canvas
         camera={{
-          position: [500, 500, 500], // Initial camera position (x, y, z)
-          fov: 50, // Field of view
-          near: 1, // Set near clipping plane to 1 (default is often too close)
-          far: 10000, // Set far clipping plane to a large value (increased to 10000)
+          position: [500, 500, 500], // Initial camera position
+          fov: 50,
+          near: 1,
+          far: 10000,
         }}
+        onPointerMove={handlePointerMove}
       >
         {showStars && (
           <Stars
-            radius={300} // Place stars outside the Moon
-            depth={250} // Depth of stars field
-            count={8000} // Number of stars
-            factor={10} // Spread factor
-            saturation={0} // Set color to white
-            fade={true} // Smooth fade effect
+            radius={300}
+            depth={250}
+            count={8000}
+            factor={10}
+            saturation={0}
+            fade={true}
           />
         )}
         <ambientLight intensity={2.8} />
         <directionalLight position={[10, 10, 5]} intensity={1} />
 
-        {/* The MoonModel will move with OrbitControls, but stars will stay fixed */}
-        <MoonModel scale={[0.5, 0.5, 0.5]} autoRotate={autoRotate} />
+        {/* RaycasterHandler handles mouse interaction and coordinates */}
+        <RaycasterHandler setCoordinates={setCoordinates} autoRotate={autoRotate} />
 
-        {/* OrbitControls will move the camera, not the stars */}
         <OrbitControls
           enableZoom={true}
           zoomSpeed={2.0}
           rotateSpeed={1.2}
           enablePan={true}
         />
-
-        {/* CameraPosition will calculate and update the coordinates */}
-        <CameraPosition setCoordinates={setCoordinates} />
       </Canvas>
 
-      {/* Display latitude and longitude at the bottom-right */}
+      {/* Display latitude, longitude, and horizontal resolution */}
       <div
         style={{
           position: 'absolute',
