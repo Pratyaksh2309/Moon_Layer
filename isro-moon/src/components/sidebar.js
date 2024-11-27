@@ -1,7 +1,44 @@
+// import React from 'react';
+// import './sidebar.css';
+
+// const Sidebar = ({ setShowStars, autoRotate, setAutoRotate }) => {
+//   return (
+//     <div className="sidebar">
+//       <h3>Settings</h3>
+//       <ul>
+//         <li>
+//           <label>
+//             <input
+//               type="checkbox"
+//               defaultChecked
+//               onChange={(e) => setShowStars(e.target.checked)}
+//             />
+//             Show Stars
+//           </label>
+//         </li>
+//         <li>
+//           <label>
+//             <input
+//               type="checkbox"
+//               checked={autoRotate}
+//               onChange={(e) => setAutoRotate(e.target.checked)}
+//             />
+//             Auto Rotate Moon
+//           </label>
+//         </li>
+//       </ul>
+//     </div>
+//   );
+// };
+
+// export default Sidebar;
+
+
+// Sidebar.js
 import React from 'react';
 import './sidebar.css';
 
-const Sidebar = ({ setShowStars, autoRotate, setAutoRotate }) => {
+const Sidebar = ({ setShowStars, autoRotate, setAutoRotate, setShowTexture }) => {
   return (
     <div className="sidebar">
       <h3>Settings</h3>
@@ -24,6 +61,15 @@ const Sidebar = ({ setShowStars, autoRotate, setAutoRotate }) => {
               onChange={(e) => setAutoRotate(e.target.checked)}
             />
             Auto Rotate Moon
+          </label>
+        </li>
+        <li>
+          <label>
+            <input
+              type="checkbox"
+              onChange={(e) => setShowTexture(e.target.checked)} // Toggle texture
+            />
+            Show Moon Texture
           </label>
         </li>
       </ul>
