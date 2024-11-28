@@ -1,7 +1,8 @@
 import React from 'react';
 import './sidebar.css';
 
-const Sidebar = ({ setShowStars, autoRotate, setAutoRotate, setShowTexture }) => {
+const Sidebar = ({ setShowStars, setShowAlTexture, 
+  setShowSiTexture,autoRotate, setAutoRotate, setShowTexture }) => {
   return (
     <div className="sidebar">
       <h3>Settings</h3>
@@ -20,9 +21,18 @@ const Sidebar = ({ setShowStars, autoRotate, setAutoRotate, setShowTexture }) =>
           <label>
             <input
               type="checkbox"
-              onChange={(e) => setShowTexture(e.target.checked)} // Toggle texture
+              onChange={(e) => setShowAlTexture(e.target.checked)} // Toggle texture
             />
             Al Ratio
+          </label>
+        </li>
+        <li>
+          <label>
+            <input
+              type="checkbox"
+              onChange={(e) => setShowSiTexture(e.target.checked)} // Toggle texture
+            />
+            SI Ratio
           </label>
         </li>
       </ul>
