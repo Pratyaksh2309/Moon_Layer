@@ -12,10 +12,13 @@
   },
   "dependencies": {
     "cesium": "^1.123.1",
+    "georaster-layer-for-leaflet": "^3.10.0",
     "leaflet": "^1.9.4",
+    "ol": "^10.3.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1",
+    "react-openlayers": "^0.3.0",
     "resium": "^1.18.3"
   },
   "devDependencies": {
