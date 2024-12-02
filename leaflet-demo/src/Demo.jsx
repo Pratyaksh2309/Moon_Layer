@@ -23,18 +23,37 @@ const App = () => {
             // ImageStatic layer for GeoTIFF overlay
             const imageLayer = new ImageLayer({
                 source: new ImageStatic({
-                    url: "/Al_Si_combined.tiff", // Path to TIFF image
-                    imageSize: [2048, 1024], // Example size, adjust according to your TIFF image's resolution
+                    url: "./kop.png", // Path to TIFF image
+                   // imageSize: [1106, 553], // Example size, adjust according to your TIFF image's resolution
                     projection: 'EPSG:4326', // Ensure the projection matches your TIFF file's projection
-                    imageExtent: [-180, -90, 180, 90], // World extent (longitude, latitude bounds of the image)
+                    imageExtent: [-180, 0, 180, 86], // World extent (longitude, latitude bounds of the image)
                 }),
-                opacity: 0.6, // Adjust opacity to control overlay transparency
+                opacity: 0.4, // Adjust opacity to control overlay transparency
             });
-
+            const imageLayer1 = new ImageLayer({
+                source: new ImageStatic({
+                    url: "./kop.png", // Path to TIFF image
+                   // imageSize: [1106, 553], // Example size, adjust according to your TIFF image's resolution
+                    projection: 'EPSG:4326', // Ensure the projection matches your TIFF file's projection
+                    imageExtent: [-540, 0, -180, 86], // World extent (longitude, latitude bounds of the image)
+                }),
+                opacity: 0.4, // Adjust opacity to control overlay transparency
+            });
+            const imageLayer0 = new ImageLayer({
+                source: new ImageStatic({
+                    url: "./kop.png", // Path to TIFF image
+                   // imageSize: [1106, 553], // Example size, adjust according to your TIFF image's resolution
+                    projection: 'EPSG:4326', // Ensure the projection matches your TIFF file's projection
+                    imageExtent: [180, 0, 540, 86], // World extent (longitude, latitude bounds of the image)
+                }),
+                opacity: 0.4, // Adjust opacity to control overlay transparency
+            });
+            
+            
             // Initialize map with base and overlay layers
             mapRef.current = new Map({
                 target: "map",
-                layers: [moonLayer, imageLayer],
+                layers: [moonLayer, imageLayer, imageLayer0, imageLayer1],
                 view: new View({
                     center: fromLonLat([0, 80]),
                     zoom: 2,
