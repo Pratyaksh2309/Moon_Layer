@@ -1,0 +1,33 @@
+.ol-control button{  
+    font-size: 30px; /* Larger font size */
+    font-weight: bold;
+    border: none;
+    margin: 5px;
+    width: 50px; 
+    height: 50px;
+    line-height: 40px; /* Center text vertically */
+    text-align: center; /* Center text horizontally */
+    cursor: pointer; /* Pointer cursor on hover */
+    border-radius: 50%; /* Circular buttons */
+    transition: all 0.3s ease; /* Smooth hover effect */
+}
+
+/* Hover effect */
+.ol-zoom-in:hover,
+.ol-zoom-out:hover {
+    background-color: hsl(211, 100%, 65%); /* Darker blue on hover */
+    transform: scale(1.1); /* Slightly enlarge on hover */
+}
+
+/* Optional: Styling for disabled buttons */
+.ol-zoom-in:disabled,
+.ol-zoom-out:disabled {
+    background-color: gray;
+    cursor: not-allowed;
+}
+
+h2{
+    font-size: 80px;
+    color: antiquewhite;
+    text-align: center;
+}
